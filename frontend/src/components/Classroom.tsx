@@ -100,18 +100,25 @@ export function Classroom({ isPlaying = false, onLoaded, slideContent }: Classro
     
     // Find talking or gesture animation
     const talkAnim = animNames.find(n => 
+      n.toLowerCase().includes('point') || 
       n.toLowerCase().includes('talk') || 
       n.toLowerCase().includes('gesture') ||
       n.toLowerCase().includes('explain')
     )
-    const idleAnim = animNames.find(n => n.toLowerCase().includes('idle')) || animNames[0]
+    const idleAnim = animNames.find(n => 
+      n.toLowerCase().includes('idle') || 
+      n.toLowerCase().includes('breath')
+    ) || animNames[0]
+    
+    console.log('Available animations:', animNames)
+    console.log('Playing:', isPlaying ? talkAnim : idleAnim)
     
     if (isPlaying && talkAnim) {
-      Object.values(animations).forEach(a => a.stop())
-      animations[talkAnim]?.play()
+      Object.values(animations).forEach(a => a.fadeOut(0.3))
+      animations[talkAnim]?.reset().fadeIn(0.3).play()
     } else if (idleAnim) {
-      Object.values(animations).forEach(a => a.stop())
-      animations[idleAnim]?.play()
+      Object.values(animations).forEach(a => a.fadeOut(0.3))
+      animations[idleAnim]?.reset().fadeIn(0.3).play()
     }
   }, [isPlaying])
 

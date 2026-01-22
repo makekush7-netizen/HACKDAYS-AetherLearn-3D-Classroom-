@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Sparkles, Loader2, BookOpen, Clock, Mic } from 'lucide-react'
+import { LoadingScreen } from './LoadingScreen'
 
 interface GenerateLectureProps {
   onGenerated: (data: any) => void
@@ -11,7 +12,7 @@ export function GenerateLecture({ onGenerated }: GenerateLectureProps) {
   const [voice, setVoice] = useState('af_sky')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState('')
+  const [loadingStage, setLoadingStage] = useState<'connecting' | 'generating' | 'audio' | 'finalizing'>('connecting')
 
   const voices = [
     { id: 'af_sky', name: 'Sky', gender: 'Female' },
@@ -35,9 +36,12 @@ export function GenerateLecture({ onGenerated }: GenerateLectureProps) {
 
     setLoading(true)
     setError(null)
-    setProgress('Connecting to Gemini AI...')
+    setLoadingStage('connecting')
 
     try {
+      // Simulate stages for better UX
+      setTimeout(() => setLoadingStage('generating'), 2000)
+      
       const response = await fetch('/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,14 +58,16 @@ export function GenerateLecture({ onGenerated }: GenerateLectureProps) {
         throw new Error(data.detail || 'Failed to generate lecture')
       }
 
-      setProgress('Generating slides and audio...')
+      setLoadingStage('audio')
       const data = await response.json()
       
-      setProgress('Complete!')
-      setTimeout(() => onGenerated(data), 500)
+      setLoadingStage('finalizing')
+      setTimeout(() => {
+        setLoading(false)
+        onGenerated(data)
+      }, 1000)
     } catch (err: any) {
       setError(err.message || 'Something went wrong')
-    } finally {
       setLoading(false)
     }
   }
@@ -75,12 +81,17 @@ export function GenerateLecture({ onGenerated }: GenerateLectureProps) {
     'The Human Heart',
   ]
 
+  // Show loading screen when generating
+  if (loading) {
+    return <LoadingScreen stage={loadingStage} topic={topic} />
+  }
+
   return (
-    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 pt-24">
       <div className="w-full max-w-2xl">
         {/* Title */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-2">Generate AI Lecture</h2>
+          <h2 className="text-3xl font-bold mb-2 text-white">Generate AI Lecture</h2>
           <p className="text-gray-400">Enter any topic and let AI create an immersive lesson</p>
         </div>
 
@@ -177,20 +188,11 @@ export function GenerateLecture({ onGenerated }: GenerateLectureProps) {
           {/* Generate Button */}
           <button
             onClick={handleGenerate}
-            disabled={loading || !topic.trim()}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-primary-500 to-purple-500 hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2 transition-all"
+            disabled={!topic.trim()}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-500/25"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                {progress}
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                Generate Lecture
-              </>
-            )}
+            <Sparkles className="w-5 h-5" />
+            Generate Lecture
           </button>
         </div>
 

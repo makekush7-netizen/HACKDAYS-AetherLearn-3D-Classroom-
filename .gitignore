@@ -4,17 +4,19 @@ venv/
 __pycache__/
 *.pyc
 
+# Large model files - download separately
+backend/KokoroTTS/kokoro-v1.0.onnx
+backend/KokoroTTS/voices-v1.0.bin
+*.onnx
+*.bin
+
 # Generated content
 backend/generated/
-*.wav
+frontend/dist/
 
 # Environment
 .env
 *.env.local
-
-# Build outputs
-dist/
-build/
 
 # IDE
 .vscode/
@@ -24,6 +26,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# Large model files (keep in repo for demo)
-# backend/KokoroTTS/*.onnx
-# backend/KokoroTTS/*.bin
+# Logs
+*.log
+npm-debug.log*
