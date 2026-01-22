@@ -31,6 +31,17 @@ export function LecturePlayer({ lecture }: LecturePlayerProps) {
   const slide = lecture.slides[currentSlide]
   const totalSlides = lecture.slides.length
 
+  // Cleanup audio on unmount (when user navigates away)
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+        audioRef.current = null
+      }
+    }
+  }, [])
+
   // Handle audio playback
   useEffect(() => {
     if (!audioRef.current) {

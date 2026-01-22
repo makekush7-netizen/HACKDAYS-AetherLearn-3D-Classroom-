@@ -100,13 +100,10 @@ export function Classroom({ isPlaying = false, onLoaded, slideContent }: Classro
     
     if (animNames.length === 0) return
     
-    // Find speaking animation (SpeakingIdle or similar)
-    const activeAnim = animNames.find(n => 
-      n.toLowerCase().includes('speaking') ||
-      n.toLowerCase().includes('talk') || 
-      n.toLowerCase().includes('point') || 
-      n.toLowerCase().includes('gesture')
-    )
+    // Find speaking animation - exact name is 'speaking.001'
+    const activeAnim = animNames.find(n => n === 'speaking.001') ||
+      animNames.find(n => n.toLowerCase().includes('speaking')) ||
+      animNames.find(n => n.toLowerCase().includes('talk'))
     
     // Find best idle animation (prefer breathing for natural look)
     const breathingIdle = animNames.find(n => n.toLowerCase().includes('breathing'))

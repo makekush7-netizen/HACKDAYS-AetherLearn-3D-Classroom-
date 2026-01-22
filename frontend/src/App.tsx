@@ -149,6 +149,10 @@ export default function App() {
   }
 
   const handleBack = () => {
+    // Stop any playing audio
+    demoAudioRef.current?.pause()
+    setDemoPlaying(false)
+    setDemoSpeaking(false)
     setView('home')
     setLecture(null)
   }
