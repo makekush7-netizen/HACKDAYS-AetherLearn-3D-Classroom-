@@ -98,27 +98,36 @@ export function Classroom({ isPlaying = false, onLoaded, slideContent }: Classro
     const animations = sceneRef.current.animations
     const animNames = Object.keys(animations)
     
-    // Find talking or gesture animation
-    const talkAnim = animNames.find(n => 
-      n.toLowerCase().includes('point') || 
+    if (animNames.length === 0) return
+    
+    // Find speaking animation (SpeakingIdle or similar)
+    const activeAnim = animNames.find(n => 
+      n.toLowerCase().includes('speaking') ||
       n.toLowerCase().includes('talk') || 
-      n.toLowerCase().includes('gesture') ||
-      n.toLowerCase().includes('explain')
+      n.toLowerCase().includes('point') || 
+      n.toLowerCase().includes('gesture')
     )
-    const idleAnim = animNames.find(n => 
-      n.toLowerCase().includes('idle') || 
-      n.toLowerCase().includes('breath')
-    ) || animNames[0]
     
-    console.log('Available animations:', animNames)
-    console.log('Playing:', isPlaying ? talkAnim : idleAnim)
+    // Find best idle animation (prefer breathing for natural look)
+    const breathingIdle = animNames.find(n => n.toLowerCase().includes('breathing'))
+    const regularIdle = animNames.find(n => n === 'Idle' || n.toLowerCase() === 'idle')
+    const idleAnim = breathingIdle || regularIdle || animNames[0]
     
-    if (isPlaying && talkAnim) {
-      Object.values(animations).forEach(a => a.fadeOut(0.3))
-      animations[talkAnim]?.reset().fadeIn(0.3).play()
+    console.log('Animation switch - isPlaying:', isPlaying)
+    console.log('  Active animation:', activeAnim)
+    console.log('  Idle animation:', idleAnim)
+    
+    // Fade out all current animations
+    Object.values(animations).forEach(a => a.fadeOut(0.5))
+    
+    if (isPlaying && activeAnim) {
+      // Play pointing/talking animation when speaking
+      animations[activeAnim].reset().fadeIn(0.5).play()
+      console.log('→ Now playing:', activeAnim)
     } else if (idleAnim) {
-      Object.values(animations).forEach(a => a.fadeOut(0.3))
-      animations[idleAnim]?.reset().fadeIn(0.3).play()
+      // Play idle animation when not speaking
+      animations[idleAnim].reset().fadeIn(0.5).play()
+      console.log('→ Now playing:', idleAnim)
     }
   }, [isPlaying])
 
@@ -218,14 +227,23 @@ export function Classroom({ isPlaying = false, onLoaded, slideContent }: Classro
           sceneRef.current.mixer = mixer
 
           gltf.animations.forEach((clip) => {
-            sceneRef.current!.animations[clip.name] = mixer.clipAction(clip)
+            const action = mixer.clipAction(clip)
+            sceneRef.current!.animations[clip.name] = action
+            console.log(`  Animation found: "${clip.name}" (${clip.duration.toFixed(2)}s)`)
           })
 
-          // Play idle by default
-          const idle = sceneRef.current.animations['Idle'] || Object.values(sceneRef.current.animations)[0]
-          idle?.play()
+          // Find the best idle animation - prefer "Breathing Idle" for natural movement
+          const animNames = Object.keys(sceneRef.current.animations)
+          const breathingIdle = animNames.find(n => n.toLowerCase().includes('breathing'))
+          const regularIdle = animNames.find(n => n === 'Idle' || n.toLowerCase() === 'idle')
+          const bestIdle = breathingIdle || regularIdle || animNames[0]
           
-          console.log('✓ Animations:', Object.keys(sceneRef.current.animations))
+          if (bestIdle) {
+            console.log('✓ Playing default animation:', bestIdle)
+            sceneRef.current.animations[bestIdle].play()
+          }
+          
+          console.log('✓ All animations:', animNames)
         }
         
         onLoaded?.()

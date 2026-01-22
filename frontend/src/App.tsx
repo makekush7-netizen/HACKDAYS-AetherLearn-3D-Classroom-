@@ -36,7 +36,7 @@ const demoLecture: LectureData = {
         'Found in plants, algae, and some bacteria'
       ],
       svg_url: '',
-      audio_url: null
+      audio_url: '/audio/demo/slide_1.wav'
     },
     {
       slide_num: 2,
@@ -48,7 +48,7 @@ const demoLecture: LectureData = {
         'ATP and NADPH are produced'
       ],
       svg_url: '',
-      audio_url: null
+      audio_url: '/audio/demo/slide_2.wav'
     },
     {
       slide_num: 3,
@@ -60,7 +60,7 @@ const demoLecture: LectureData = {
         'Produces glucose (C₆H₁₂O₆)'
       ],
       svg_url: '',
-      audio_url: null
+      audio_url: '/audio/demo/slide_3.wav'
     }
   ],
   script: [
@@ -70,21 +70,78 @@ const demoLecture: LectureData = {
   ]
 }
 
+// Demo audio ref for landing page
+const demoAudioRef = { current: null as HTMLAudioElement | null }
+
 export default function App() {
   const [view, setView] = useState<View>('home')
   const [lecture, setLecture] = useState<LectureData | null>(null)
   const [demoSlide, setDemoSlide] = useState(0)
   const [demoPlaying, setDemoPlaying] = useState(false)
+  const [demoSpeaking, setDemoSpeaking] = useState(false)
   const [classroomLoaded, setClassroomLoaded] = useState(false)
 
-  // Auto-rotate demo slides
+  // Kokoro TTS audio playback for demo
   useEffect(() => {
-    if (view !== 'home') return
+    if (view !== 'home') {
+      demoAudioRef.current?.pause()
+      setDemoSpeaking(false)
+      return
+    }
+
+    if (!demoAudioRef.current) {
+      demoAudioRef.current = new Audio()
+    }
+
+    const audio = demoAudioRef.current
+    const audioUrl = demoLecture.slides[demoSlide]?.audio_url
+
+    if (!audioUrl) return
+
+    // Set up event handlers
+    const handlePlay = () => setDemoSpeaking(true)
+    const handlePause = () => setDemoSpeaking(false)
+    const handleEnded = () => {
+      setDemoSpeaking(false)
+      // Auto-advance to next slide
+      if (demoSlide < demoLecture.slides.length - 1) {
+        setTimeout(() => setDemoSlide(prev => prev + 1), 500)
+      } else {
+        setDemoPlaying(false)
+      }
+    }
+
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('ended', handleEnded)
+
+    // Load audio for current slide
+    if (audio.src !== window.location.origin + audioUrl) {
+      audio.src = audioUrl
+    }
+
+    // Play/pause based on state
+    if (demoPlaying) {
+      audio.play().catch(err => console.log('Demo audio play error:', err))
+    } else {
+      audio.pause()
+    }
+
+    return () => {
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('ended', handleEnded)
+    }
+  }, [demoPlaying, demoSlide, view])
+
+  // Auto-rotate demo slides (only when not playing audio)
+  useEffect(() => {
+    if (view !== 'home' || demoPlaying) return
     const interval = setInterval(() => {
       setDemoSlide(prev => (prev + 1) % demoLecture.slides.length)
     }, 5000)
     return () => clearInterval(interval)
-  }, [view])
+  }, [view, demoPlaying])
 
   const handleLectureGenerated = (data: LectureData) => {
     setLecture(data)
@@ -229,7 +286,7 @@ export default function App() {
                     {/* 3D Classroom Preview */}
                     <div className="aspect-video bg-slate-800">
                       <Classroom 
-                        isPlaying={demoPlaying}
+                        isPlaying={demoSpeaking}
                         onLoaded={() => setClassroomLoaded(true)}
                         slideContent={demoLecture.slides[demoSlide]}
                       />
